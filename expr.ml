@@ -60,8 +60,25 @@ let vars_of_list : string list -> varidset =
   
 (* free_vars exp -- Returns the set of `varid`s corresponding to free
    variables in `exp` *)
-let free_vars (exp : expr) : varidset =
-  failwith "free_vars not implemented" ;;
+let rec free_vars (exp : expr) : varidset =
+  match exp with 
+  | Var v -> SS.singleton v
+  | Num _ -> SS.empty
+  | Bool _ -> SS.empty
+  | Unop (_, exp1) -> free_vars exp1
+  | Binop (_, exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
+  | Conditional (exp1, exp2, exp3) -> 
+                SS.union (free_vars exp1)
+               (SS.union (free_vars exp2) (free_vars exp3))
+  | Fun (v, exp1) -> SS.remove v (free_vars exp1)
+  | Let (v, exp1, exp2) -> 
+        SS.union (SS.remove v (free_vars exp2)) (free_vars exp1)
+  | Letrec (v, exp1, exp2) -> 
+        SS.union (SS.remove v (free_vars exp2)) (free_vars exp1)
+  | Raise -> SS.empty
+  | Unassigned -> SS.empty (* Should unassigned be added? *)
+  | App (exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
+;;
   
 (* new_varname () -- Returns a freshly minted `varid` constructed with
    a running counter a la `gensym`. Assumes no variable names use the
@@ -90,10 +107,98 @@ let subst (var_name : varid) (repl : expr) (exp : expr) : expr =
    
 (* exp_to_concrete_string exp -- Returns a string representation of
    the concrete syntax of the expression `exp` *)
-let exp_to_concrete_string (exp : expr) : string =
-  failwith "exp_to_concrete_string not implemented" ;;
+let rec exp_to_concrete_string (exp : expr) : string =
+  match exp with 
+  | Var v -> v
+  | Num n -> string_of_int n
+  | Bool b -> string_of_bool b
+  | Unop (neg, exp) -> "-" ^ (exp_to_concrete_string exp)
+  | Binop (bin, exp1, exp2) -> 
+          let bin_str : string = 
+            match bin with 
+            | Plus -> " + "
+            | Minus -> " - "
+            | Times -> " * "
+            | Equals -> " = "
+            | LessThan -> " < " in
+          (exp_to_concrete_string exp1) ^ bin_str ^ 
+          (exp_to_concrete_string exp2)
+  | Conditional (exp1, exp2, exp3) -> 
+                "if " ^ (exp_to_concrete_string exp1) ^ 
+                " then " ^ (exp_to_concrete_string exp2) ^
+                " else " ^ (exp_to_concrete_string exp3)
+  | Fun (v, exp) -> 
+        "fun " ^ v ^ " -> " ^ exp_to_concrete_string exp
+  | Let (v, exp1, exp2) -> 
+        " let " ^ v ^ " = " ^ 
+        exp_to_concrete_string exp1 ^ " in " ^ 
+        exp_to_concrete_string exp2
+  | Letrec (v, exp1, exp2) -> 
+        " let rec " ^ v ^ " = " ^ 
+        exp_to_concrete_string exp1 ^ " in " ^
+        exp_to_concrete_string exp2
+  | Raise -> "Exception "
+  | Unassigned -> "unassigned "
+  | App (exp1, exp2) -> exp_to_concrete_string exp1 ^ " " ^
+                        exp_to_concrete_string exp2
+  ;;
      
+(*| Let of varid * expr * expr           (* local naming *)
+  | Letrec of varid * expr * expr        (* recursive local naming *)
+  | Raise                                (* exceptions *)
+  | Unassigned                           (* (temporarily) unassigned *)
+  | App of expr * expr                   (* function applications *) *)
+
+
 (* exp_to_abstract_string exp -- Return a string representation of the
    abstract syntax of the expression `exp` *)
-let exp_to_abstract_string (exp : expr) : string =
-  failwith "exp_to_abstract_string not implemented" ;;
+let rec exp_to_abstract_string (exp : expr) : string =
+  match exp with 
+  | Var v -> "Var(" ^ v ^ ")"
+  | Num n -> "Num(" ^ string_of_int n ^ ")"
+  | Bool b -> "Bool(" ^ string_of_bool b ^ ")"
+  | Unop (neg, exp) -> "Unop(Negate, " ^ 
+                       (exp_to_abstract_string exp) ^ ")"
+  | Binop (bin, exp1, exp2) -> 
+          let bin_str : string = 
+            match bin with 
+            | Plus -> "Plus"
+            | Minus -> "Minus"
+            | Times -> "Times"
+            | Equals -> "Equals"
+            | LessThan -> "LessThan" in
+          "Binop(" ^ bin_str ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
+                                      exp_to_abstract_string exp2 ^ ")"
+  | Conditional (exp1, exp2, exp3) -> 
+                "Conditional(" ^ 
+                exp_to_abstract_string exp1 ^ ", " ^
+                exp_to_abstract_string exp2 ^ ", " ^
+                exp_to_abstract_string exp3 ^ ")"
+  | Fun (v, exp) -> 
+        "Fun(" ^ v ^ ", " ^ exp_to_abstract_string exp ^ ")"
+  | Let (v, exp1, exp2) -> 
+        "Let(" ^ v ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
+                            exp_to_abstract_string exp2 ^ ")"
+  | Letrec (v, exp1, exp2) -> 
+           "Letrec(" ^ v ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
+                                  exp_to_abstract_string exp2 ^ ")"
+  | Raise -> "Raise()"
+  | Unassigned -> "Unassigned"
+  | App (exp1, exp2) -> 
+        "App(" ^ exp_to_abstract_string exp1 ^ ", " ^
+                 exp_to_abstract_string exp2 ^ ")"
+  ;;
+
+(* 
+type unop =
+  | Negate
+;;
+    
+type binop =
+  | Plus
+  | Minus
+  | Times
+  | Equals
+  | LessThan
+;;
+*)
