@@ -84,23 +84,78 @@ let rec free_vars (exp : expr) : varidset =
    a running counter a la `gensym`. Assumes no variable names use the
    prefix "var". (Otherwise, they might accidentally be the same as a
    generated variable name.) *)
-let new_varname () : varid =
-  failwith "new_varname not implemented" ;;
-
+let new_varname : unit -> varid =
+  let suffix = ref 0 in 
+  fun () -> let symbol = "var" ^ string_of_int !suffix in 
+            suffix := !suffix + 1;
+            symbol ;;
+      
+(*
+let gensym : string -> string =
+  let suffix = ref 0 in
+  fun str -> let symbol = str ^ string_of_int !suffix in
+             suffix := !suffix + 1;
+             symbol ;; *)
 (*......................................................................
   Substitution 
 
   Substitution of expressions for free occurrences of variables is the
   cornerstone of the substitution model for functional programming
   semantics.
+
+  substitution operates eagerly
+  1. substitution
+  2. evaluation
+  environment operates lazily 
+  1. evaluation
  *)
 
 (* subst var_name repl exp -- Return the expression `exp` with `repl`
    substituted for free occurrences of `var_name`, avoiding variable
    capture *)
-let subst (var_name : varid) (repl : expr) (exp : expr) : expr =
-  failwith "subst not implemented" ;;
-     
+let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
+  match exp with 
+  | Var v -> if v = var_name then repl else Var v
+  | Num v -> Num v
+  | Bool b -> Bool b
+  | Unop (neg, exp1) -> Unop (neg, subst var_name repl exp1)
+  | Binop (bin, exp1, exp2) -> 
+          Binop (bin, subst var_name repl exp1,
+                      subst var_name repl exp2)
+  | Conditional (exp1, exp2, exp3) -> 
+                Conditional (subst var_name repl exp1,
+                             subst var_name repl exp2,
+                             subst var_name repl exp3)
+  | Fun (v, exp1) ->
+        if v = var_name then Fun (v, exp1)
+        else if not (SS.mem v (free_vars repl)) 
+           then Fun (v, subst var_name repl exp1)
+        else let new_var = new_varname () in 
+                Fun (new_var, subst var_name repl 
+                             (subst v (Var new_var) exp1))
+  | Let (v, q, r) -> 
+        if v = var_name then Let (v, subst v repl q, r)
+        else if not (SS.mem v (free_vars repl))
+           then Let (v, subst var_name repl q, subst var_name repl r)
+        else let new_var = new_varname () in 
+                Let (new_var, subst var_name repl q, 
+                              subst var_name repl 
+                             (subst v (Var new_var) exp))
+  | Letrec (v, q, r) -> 
+           if v = var_name then Letrec (v, subst v repl q, r)
+           else if not (SS.mem v (free_vars repl))
+            then Letrec (v, subst var_name repl q, subst var_name repl r)
+           else let new_var = new_varname () in 
+                Letrec (new_var, subst var_name repl q, 
+                              subst var_name repl 
+                             (subst v (Var new_var) exp))
+  | Raise -> Raise
+  | Unassigned -> Unassigned
+  | App (f, a) -> 
+        App (subst var_name repl f, subst var_name repl a)
+ ;;
+
+
 (*......................................................................
   String representations of expressions
  *)
@@ -148,7 +203,6 @@ let rec exp_to_concrete_string (exp : expr) : string =
   | Raise                                (* exceptions *)
   | Unassigned                           (* (temporarily) unassigned *)
   | App of expr * expr                   (* function applications *) *)
-
 
 (* exp_to_abstract_string exp -- Return a string representation of the
    abstract syntax of the expression `exp` *)
