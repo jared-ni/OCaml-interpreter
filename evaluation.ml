@@ -68,19 +68,32 @@ module Env : ENV =
     let empty () : env = []
 
     let close (exp : expr) (env : env) : value =
-      failwith "close not implemented"
+      Closure (exp, env) 
 
-    let lookup (env : env) (varname : varid) : value =
-      failwith "lookup not implemented"
+    let rec lookup (env : env) (varname : varid) : value =
+      match env with 
+      | [] -> raise (EvalError "variable not found in environment")
+      | (vid, valref) :: tl -> 
+        if vid = varname then !valref 
+        else lookup tl varname
 
     let extend (env : env) (varname : varid) (loc : value ref) : env =
-      failwith "extend not implemented"
+      (varname, loc) :: env
 
-    let value_to_string ?(printenvp : bool = true) (v : value) : string =
-      failwith "value_to_string not implemented"
-
-    let env_to_string (env : env) : string =
-      failwith "env_to_string not implemented"
+    let rec value_to_string ?(printenvp : bool = true) (v : value) : string =
+      match v with 
+      | Val exp -> exp_to_concrete_string exp 
+      | Closure (exp, env) -> 
+        let exp_str = exp_to_concrete_string exp in 
+        if printenvp then 
+          "(" ^ exp_str ^ ", " ^ env_to_string env ^ ")"
+        else exp_str
+        
+    and env_to_string (env : env) : string =
+      match env with 
+      | [] -> ""
+      | (vid, valref) :: tl -> 
+        "(" ^ vid ^ ", " ^ value_to_string !valref ^ ")" ^ env_to_string tl
   end
 ;;
 

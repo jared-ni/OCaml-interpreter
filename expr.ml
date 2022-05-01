@@ -203,11 +203,6 @@ let rec exp_to_concrete_string (exp : expr) : string =
                         exp_to_concrete_string exp2
   ;;
      
-(*| Let of varid * expr * expr           (* local naming *)
-  | Letrec of varid * expr * expr        (* recursive local naming *)
-  | Raise                                (* exceptions *)
-  | Unassigned                           (* (temporarily) unassigned *)
-  | App of expr * expr                   (* function applications *) *)
 
 (* exp_to_abstract_string exp -- Return a string representation of the
    abstract syntax of the expression `exp` *)
@@ -247,17 +242,3 @@ let rec exp_to_abstract_string (exp : expr) : string =
         "App(" ^ exp_to_abstract_string exp1 ^ ", " ^
                  exp_to_abstract_string exp2 ^ ")" 
   ;;
-
-(* 
-type unop =
-  | Negate
-;;
-    
-type binop =
-  | Plus
-  | Minus
-  | Times
-  | Equals
-  | LessThan
-;;
-*)
