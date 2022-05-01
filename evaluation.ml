@@ -114,11 +114,58 @@ let eval_t (exp : expr) (_env : Env.env) : Env.value =
   Env.Val exp ;;
 
 (* The SUBSTITUTION MODEL evaluator -- to be completed *)
-   
-let eval_s (_exp : expr) (_env : Env.env) : Env.value =
-  failwith "eval_s not implemented" ;;
+let eval_s (exp : expr) (_env : Env.env) : Env.value =
+  let rec eval_s_rec (exps : expr) : expr = 
+    match exps with 
+    | Var v -> Var v
+    | Num v -> Num v
+    | Bool b -> Bool b
+    | Fun (exp1, exp2) -> Fun (exp1, exp2)
+    | Binop (bin, exp1, exp2) -> 
+      let ex1 = eval_s_rec exp1 in 
+      let ex2 = eval_s_rec exp2 in 
+      (match bin, ex1, ex2 with 
+      | Plus, Num x1, Num x2 -> Num (x1 + x2)
+      | Plus, _, _ -> raise (EvalError "can't add non-integers")
+      | Minus, Num x1, Num x2 -> Num (x1 - x2)
+      | Minus, _, _ -> raise (EvalError "can't subtract non-integers")
+      | Times, Num x1, Num x2 -> Num (x1 * x2) 
+      | Times, _, _ -> raise (EvalError "can't multiply non-integers")
+      | Equals, Num x1, Num x2 -> Bool (x1 = x2)
+      | Equals, Bool x1, Bool x2 -> Bool (x1 = x2)
+      | Equals, _, _ -> raise (EvalError "can't compare non-(bool & int)")
+      | LessThan, Num x1, Num x2 -> Bool (x1 < x2)
+      | LessThan, Bool x1, Bool x2 -> Bool (x1 > x2)
+      | LessThan, _, _ -> raise (EvalError "can't divide non-integers"))
+    | Unop (neg, exp1) -> 
+      (match neg, eval_s_rec exp1 with 
+      | Negate, Num x1 -> Num (~-(x1))
+      | Negate, _ -> raise (EvalError "can't negate non-integers"))
+    | Conditional (exp1, exp2, exp3) -> 
+      (match eval_s_rec exp1 with 
+      | Bool b -> 
+        if b then eval_s_rec exp2 else eval_s_rec exp3
+      | _ -> raise (EvalError "conditional can only evaluate bool"))
+    | App (f, a) -> 
+        (match eval_s_rec f with 
+        | Fun (exp1, exp2) -> 
+          eval_s_rec (subst exp1 (eval_s_rec a) exp2)
+        (* | App (exp1, exp2) ->
+          eval_s_rec (App (eval_s_rec exp1, a)) *)
+        | _ -> raise (EvalError "failed App "))
+    | Let (v, q, r) -> 
+          eval_s_rec (subst v (eval_s_rec q) r)
+    | Letrec (x, d, b) -> 
+          eval_s_rec (subst x (subst x (Letrec (x, d, Var x)) d) b)
+    | Raise -> raise (EvalError "evaluation error")
+    | Unassigned -> raise (EvalError "unassigned variable")
+  in Env.Val (eval_s_rec exp)
+  ;;
      
-(* The DYNAMICALLY-SCOPED ENVIRONMENT MODEL evaluator -- to be
+(*subst (var_name : varid) (repl : expr) (exp : expr) *)
+(* let v = q in r
+sub v q r 
+The DYNAMICALLY-SCOPED ENVIRONMENT MODEL evaluator -- to be
    completed *)
    
 let eval_d (_exp : expr) (_env : Env.env) : Env.value =
@@ -146,4 +193,4 @@ let eval_e _ =
    above, not the `evaluate` function, so it doesn't matter how it's
    set when you submit your solution.) *)
    
-let evaluate = eval_t ;;
+let evaluate = eval_s ;;

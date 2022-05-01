@@ -74,7 +74,8 @@ let rec free_vars (exp : expr) : varidset =
   | Let (v, exp1, exp2) -> 
         SS.union (SS.remove v (free_vars exp2)) (free_vars exp1)
   | Letrec (v, exp1, exp2) -> 
-        SS.union (SS.remove v (free_vars exp2)) (free_vars exp1)
+           SS.union (SS.remove v (free_vars exp2)) 
+                    (SS.remove v (free_vars exp1))
   | Raise -> SS.empty
   | Unassigned -> SS.empty (* Should unassigned be added? *)
   | App (exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
@@ -140,15 +141,19 @@ let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
         else let new_var = new_varname () in 
                 Let (new_var, subst var_name repl q, 
                               subst var_name repl 
-                             (subst v (Var new_var) exp))
+                             (subst v (Var new_var) r))
   | Letrec (v, q, r) -> 
-           if v = var_name then Letrec (v, subst v repl q, r)
+           (* do nothing, because x is not free variable *)
+           if v = var_name then Letrec (v, q, r)
            else if not (SS.mem v (free_vars repl))
             then Letrec (v, subst var_name repl q, subst var_name repl r)
+           (* sub for both Q and P *)
            else let new_var = new_varname () in 
-                Letrec (new_var, subst var_name repl q, 
-                              subst var_name repl 
-                             (subst v (Var new_var) exp))
+                let z = Var new_var in 
+                Letrec (new_var, subst var_name repl 
+                                (subst v z q),
+                                 subst var_name repl 
+                                (subst v z r))
   | Raise -> Raise
   | Unassigned -> Unassigned
   | App (f, a) -> 
@@ -176,8 +181,8 @@ let rec exp_to_concrete_string (exp : expr) : string =
             | Times -> " * "
             | Equals -> " = "
             | LessThan -> " < " in
-          (exp_to_concrete_string exp1) ^ bin_str ^ 
-          (exp_to_concrete_string exp2)
+          "(" ^ (exp_to_concrete_string exp1) ^ bin_str ^ 
+          (exp_to_concrete_string exp2) ^ ")"
   | Conditional (exp1, exp2, exp3) -> 
                 "if " ^ (exp_to_concrete_string exp1) ^ 
                 " then " ^ (exp_to_concrete_string exp2) ^
@@ -185,11 +190,11 @@ let rec exp_to_concrete_string (exp : expr) : string =
   | Fun (v, exp) -> 
         "fun " ^ v ^ " -> " ^ exp_to_concrete_string exp
   | Let (v, exp1, exp2) -> 
-        " let " ^ v ^ " = " ^ 
+        "let " ^ v ^ " = " ^ 
         exp_to_concrete_string exp1 ^ " in " ^ 
         exp_to_concrete_string exp2
   | Letrec (v, exp1, exp2) -> 
-        " let rec " ^ v ^ " = " ^ 
+        "let rec " ^ v ^ " = " ^ 
         exp_to_concrete_string exp1 ^ " in " ^
         exp_to_concrete_string exp2
   | Raise -> "Exception "
@@ -240,7 +245,7 @@ let rec exp_to_abstract_string (exp : expr) : string =
   | Unassigned -> "Unassigned"
   | App (exp1, exp2) -> 
         "App(" ^ exp_to_abstract_string exp1 ^ ", " ^
-                 exp_to_abstract_string exp2 ^ ")"
+                 exp_to_abstract_string exp2 ^ ")" 
   ;;
 
 (* 
