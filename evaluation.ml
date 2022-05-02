@@ -93,7 +93,7 @@ module Env : ENV =
       match env with 
       | [] -> ""
       | (vid, valref) :: tl -> 
-        "(" ^ vid ^ ", " ^ value_to_string !valref ^ ")" ^ env_to_string tl
+        "(" ^ vid ^ ", " ^ value_to_string !valref ^ "); " ^ env_to_string tl
   end
 ;;
 
@@ -186,7 +186,8 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
     | Val v -> v
     | _ -> raise (EvalError "can't get expression from value") in 
   match exp with 
-  | Var _ | Num _ | Bool _ | Fun _ -> Val exp
+  | Var x -> lookup env x
+  | Num _ | Bool _ | Fun _ -> Val exp
   | Raise -> raise (EvalError "evaluation error")
   | Unassigned -> raise (EvalError "unassigned variable")
   | Binop (bin, exp1, exp2) -> 
@@ -215,10 +216,11 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
       if b then eval_d exp2 env else eval_d exp3 env
     | _ -> raise (EvalError "conditional can only evaluate bool"))
   | App (f, a) -> 
-      (match get_exp (eval_d f env) with 
-      | Fun (exp1, exp2) -> 
+      (match eval_d f env with 
+      | Val (Fun (exp1, exp2)) -> 
         eval_d exp2 (extend env exp1 (ref (eval_d a env)))
-      | _ -> raise (EvalError "failed App "))
+      | _ -> Val (exp))
+      (* raise (EvalError "failed App ")) *)
   | Let (x, def, body) | Letrec (x, def, body) -> 
         eval_d body (extend env x (ref (eval_d def env)))
 ;;
@@ -245,4 +247,4 @@ let eval_e _ =
    above, not the `evaluate` function, so it doesn't matter how it's
    set when you submit your solution.) *)
    
-let evaluate = eval_s ;;
+let evaluate = eval_d ;;
