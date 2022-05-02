@@ -172,7 +172,7 @@ let rec exp_to_concrete_string (exp : expr) : string =
   | Var v -> v
   | Num n -> string_of_int n
   | Bool b -> string_of_bool b
-  | Unop (neg, exp) -> "-" ^ (exp_to_concrete_string exp)
+  | Unop (neg, exp) -> "~-(" ^ (exp_to_concrete_string exp) ^ ")"
   | Binop (bin, exp1, exp2) -> 
           let bin_str : string = 
             match bin with 
