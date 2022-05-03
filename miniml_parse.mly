@@ -23,11 +23,13 @@
 %token <unit> UNIT
 %token <float> FLOAT
 %token <string> STRING 
+%token CONCAT
 
 %nonassoc IF
 %left LESSTHAN EQUALS
 %left PLUS MINUS
 %left TIMES
+%left CONCAT
 %nonassoc NEG
 
 %start input
@@ -59,6 +61,7 @@ expnoapp: INT                   { Num $1 }
         | OPEN CLOSE            { Unit() }
         | FLOAT                 { Float $1 }
         | STRING                { String $1 }
+        | exp CONCAT exp        { Binop(Concat, $1, $3) }
 ;
 
 %%

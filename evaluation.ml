@@ -138,18 +138,26 @@ let eval_s (exp : expr) (_env : Env.env) : Env.value =
       let ex1 = eval_s_rec exp1 in 
       let ex2 = eval_s_rec exp2 in 
       (match bin, ex1, ex2 with 
+      (* extend binop to float *)
       | Plus, Num x1, Num x2 -> Num (x1 + x2)
+      | Plus, Float x1, Float x2 -> Float (x1 +. x2)
       | Plus, _, _ -> raise (EvalError "can't add non-integers")
       | Minus, Num x1, Num x2 -> Num (x1 - x2)
+      | Minus, Float x1, Float x2 -> Float (x1 -. x2)
       | Minus, _, _ -> raise (EvalError "can't subtract non-integers")
       | Times, Num x1, Num x2 -> Num (x1 * x2) 
+      | Times, Float x1, Float x2 -> Float (x1 *. x2)
       | Times, _, _ -> raise (EvalError "can't multiply non-integers")
       | Equals, Num x1, Num x2 -> Bool (x1 = x2)
+      | Equals, Float x1, Float x2 -> Bool (x1 = x2)
       | Equals, Bool x1, Bool x2 -> Bool (x1 = x2)
       | Equals, _, _ -> raise (EvalError "can't compare non-(bool & int)")
       | LessThan, Num x1, Num x2 -> Bool (x1 < x2)
+      | LessThan, Float x1, Float x2 -> Bool (x1 < x2)
       | LessThan, Bool x1, Bool x2 -> Bool (x1 > x2)
-      | LessThan, _, _ -> raise (EvalError "can't divide non-integers"))
+      | LessThan, _, _ -> raise (EvalError "can't divide non-integers")
+      | Concat, String x1, String x2 -> String (x1 ^ x2)
+      | Concat, _, _ -> raise (EvalError "can't concatenate non-strings"))
     | Unop (neg, exp1) -> 
       (match neg, eval_s_rec exp1 with 
       | Negate, Num x1 -> Num (~-(x1))
@@ -172,6 +180,9 @@ let eval_s (exp : expr) (_env : Env.env) : Env.value =
           eval_s_rec (subst x (subst x (Letrec (x, d, Var x)) d) b)
     | Raise -> raise (EvalError "evaluation error")
     | Unassigned -> raise (EvalError "unassigned variable")
+    | Float _
+    | String _
+    | Unit _ -> exp
   in Env.Val (eval_s_rec exp)
   ;;
      
@@ -205,7 +216,9 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
     | Equals, _, _ -> raise (EvalError "can't compare non-(bool & int)")
     | LessThan, Num x1, Num x2 -> Val (Bool (x1 < x2))
     | LessThan, Bool x1, Bool x2 -> Val (Bool (x1 > x2))
-    | LessThan, _, _ -> raise (EvalError "can't divide non-integers"))
+    | LessThan, _, _ -> raise (EvalError "can't divide non-integers")
+    | Concat, String x1, String x2 -> Val (String (x1 ^ x2))
+    | Concat, _, _ -> raise (EvalError "can't concatenate non-strings"))
   | Unop (neg, exp1) -> 
     (match neg, get_exp (eval_d exp1 env) with 
     | Negate, Num x1 -> Val (Num (~-(x1)))
@@ -222,6 +235,9 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
       | _ -> raise (EvalError "failed App "))
   | Let (x, def, body) | Letrec (x, def, body) -> 
         eval_d body (extend env x (ref (eval_d def env)))
+  | Float _
+  | String _
+  | Unit _ -> Val exp
 ;;
        
 (* The LEXICALLY-SCOPED ENVIRONMENT MODEL evaluator -- optionally
@@ -261,7 +277,9 @@ let rec eval_e (exp : expr) (env : Env.env) : Env.value =
     | Equals, _, _ -> raise (EvalError "can't compare non-(bool & int)")
     | LessThan, Num x1, Num x2 -> Val (Bool (x1 < x2))
     | LessThan, Bool x1, Bool x2 -> Val (Bool (x1 > x2))
-    | LessThan, _, _ -> raise (EvalError "can't divide non-integers"))
+    | LessThan, _, _ -> raise (EvalError "can't divide non-integers")
+    | Concat, String x1, String x2 -> Val (String (x1 ^ x2))
+    | Concat, _, _ -> raise (EvalError "can't concatenate non-strings"))
   | Unop (neg, exp1) -> 
     (match neg, get_exp (eval_e exp1 env) with 
     | Negate, Num x1 -> Val (Num (~-(x1)))

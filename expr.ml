@@ -17,6 +17,7 @@ type binop =
   | Times
   | Equals
   | LessThan
+  | Concat
 ;;
 
 type varid = string ;;
