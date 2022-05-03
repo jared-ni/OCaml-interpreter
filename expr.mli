@@ -38,6 +38,9 @@ type expr =
   | Raise                                (* exceptions *)
   | Unassigned                           (* (temporarily) unassigned *)
   | App of expr * expr                   (* function applications *)
+  | Float of float
+  | String of string
+  | Unit of unit
 ;;
     
 (*......................................................................

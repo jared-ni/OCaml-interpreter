@@ -104,10 +104,39 @@ let free_vars_test () =
     ) "free_vars long f"
 ;;
 
+let subst_test () = 
+    unit_test (subst "x" (Num 1) (Let("x", Bool true, Var "x"))
+        = Let("x", Bool true, Var "x"))
+        "subst 1" ;
+    unit_test (subst "x" (Num 1) (Let("y", Num 1, Var "x"))
+        = Let("y", Num 1, Num 1))
+        "subst 2" ;  
+    unit_test (subst "x" (Num 1) (Var "x")
+        = Num 1)
+        "subst 3" ;  
+    unit_test (subst "x" (Num 1) (Binop (Plus, Var "x", Var "y"))
+        = Binop (Plus, Num 1, Var "y"))
+        "subst 4" ; 
+    unit_test (subst "x" (Num 1) (Unop (Negate, Var "x"))
+        = Unop (Negate, Num 1))
+        "subst 5" ; 
+    unit_test (subst "x" (Num 1) (Var ("y"))
+        = Var ("y"))
+        "subst 6" ; 
+    unit_test (subst "x" (Fun ("y", Var ("y"))) (Binop (Equals, Var ("x"), Var ("y"))) 
+        = Binop (Equals, Fun ("y", Var ("y")), Var ("y")))
+        "subst 7" ;
+    unit_test (subst "x" (String ("what the")) (Var "x")
+        = String ("what the"))
+        "subst 8" ;
+;;
+
+
 let test_all () = 
     exp_to_concrete_string_test ();
     exp_to_abstract_string_test ();
     free_vars_test ();
+    subst_test ();
     print_endline "done"
 ;;
 

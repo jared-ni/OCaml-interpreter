@@ -20,6 +20,9 @@
 %token <string> ID
 %token <int> INT 
 %token TRUE FALSE
+%token <unit> UNIT
+%token PARAN
+%token <string> STRING 
 
 %nonassoc IF
 %left LESSTHAN EQUALS
@@ -53,6 +56,8 @@ expnoapp: INT                   { Num $1 }
         | FUNCTION ID DOT exp   { Fun($2, $4) } 
         | RAISE                 { Raise }
         | OPEN exp CLOSE        { $2 }
+        | OPEN CLOSE            { Unit() }
+        | PARAN exp PARAN       { String(exp) }
 ;
 
 %%

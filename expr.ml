@@ -34,6 +34,10 @@ type expr =
   | Raise                                (* exceptions *)
   | Unassigned                           (* (temporarily) unassigned *)
   | App of expr * expr                   (* function applications *)
+  (* additional atomic types *)
+  | Float of float
+  | String of string
+  | Unit of unit
 ;;
   
 (*......................................................................
@@ -79,6 +83,10 @@ let rec free_vars (exp : expr) : varidset =
   | Raise -> SS.empty
   | Unassigned -> SS.empty (* Should unassigned be added? *)
   | App (exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
+  (* additional atomic types *)
+  | Float _ -> SS.empty
+  | String _ -> SS.empty
+  | Unit _ -> SS.empty
 ;;
   
 (* new_varname () -- Returns a freshly minted `varid` constructed with
@@ -158,6 +166,10 @@ let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
   | Unassigned -> Unassigned
   | App (f, a) -> 
         App (subst var_name repl f, subst var_name repl a)
+  (* additional atomic types *)
+  | Float f -> Float f
+  | String s -> String s
+  | Unit u -> Unit u
  ;;
 
 
@@ -201,6 +213,10 @@ let rec exp_to_concrete_string (exp : expr) : string =
   | Unassigned -> "unassigned "
   | App (exp1, exp2) -> exp_to_concrete_string exp1 ^ " " ^
                         exp_to_concrete_string exp2
+  (* additional atomic types *)
+  | Float f -> string_of_float f
+  | String s -> s
+  | Unit _ -> "()"
   ;;
      
 
@@ -241,4 +257,8 @@ let rec exp_to_abstract_string (exp : expr) : string =
   | App (exp1, exp2) -> 
         "App(" ^ exp_to_abstract_string exp1 ^ ", " ^
                  exp_to_abstract_string exp2 ^ ")" 
+  (* additional atomic types *)
+  | Float f -> "Float(" ^ string_of_float f ^ ")"
+  | String s -> "String(" ^ s ^ ")"
+  | Unit _ -> "Unit"
   ;;

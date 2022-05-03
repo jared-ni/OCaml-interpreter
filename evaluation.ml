@@ -130,7 +130,7 @@ let eval_t (exp : expr) (_env : Env.env) : Env.value =
 let eval_s (exp : expr) (_env : Env.env) : Env.value =
   let rec eval_s_rec (exps : expr) : expr = 
     match exps with 
-    | Var v -> Var v
+    | Var _ -> raise (EvalError "unbound variable")
     | Num v -> Num v
     | Bool b -> Bool b
     | Fun (exp1, exp2) -> Fun (exp1, exp2)
@@ -219,8 +219,7 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
       (match eval_d f env with 
       | Val (Fun (exp1, exp2)) -> 
         eval_d exp2 (extend env exp1 (ref (eval_d a env)))
-      | _ -> Val (exp))
-      (* raise (EvalError "failed App ")) *)
+      | _ -> raise (EvalError "failed App "))
   | Let (x, def, body) | Letrec (x, def, body) -> 
         eval_d body (extend env x (ref (eval_d def env)))
 ;;
@@ -236,8 +235,53 @@ let eval_l (_exp : expr) (_env : Env.env) : Env.value =
    correctness-compatible with one of the above, you can incorporate
    your extensions within `eval_s`, `eval_d`, or `eval_l`. *)
 
-let eval_e _ =
-  failwith "eval_e not implemented" ;;
+let rec eval_e (exp : expr) (env : Env.env) : Env.value =
+  let open Env in 
+  let get_exp (exp_val : Env.value) = 
+    match exp_val with 
+    | Val v -> v
+    | _ -> raise (EvalError "can't get expression from value") in 
+  match exp with 
+  | Var x -> lookup env x
+  | Num _ | Bool _ | Fun _ -> Val exp
+  | Raise -> raise (EvalError "evaluation error")
+  | Unassigned -> raise (EvalError "unassigned variable")
+  | Binop (bin, exp1, exp2) -> 
+    let ex1 = get_exp (eval_e exp1 env) in 
+    let ex2 = get_exp (eval_e exp2 env) in 
+    (match bin, ex1, ex2 with 
+    | Plus, Num x1, Num x2 -> Val (Num (x1 + x2))
+    | Plus, _, _ -> raise (EvalError "can't add non-integers")
+    | Minus, Num x1, Num x2 -> Val (Num (x1 - x2))
+    | Minus, _, _ -> raise (EvalError "can't subtract non-integers")
+    | Times, Num x1, Num x2 -> Val (Num (x1 * x2))
+    | Times, _, _ -> raise (EvalError "can't multiply non-integers")
+    | Equals, Num x1, Num x2 -> Val (Bool (x1 = x2))
+    | Equals, Bool x1, Bool x2 -> Val (Bool (x1 = x2))
+    | Equals, _, _ -> raise (EvalError "can't compare non-(bool & int)")
+    | LessThan, Num x1, Num x2 -> Val (Bool (x1 < x2))
+    | LessThan, Bool x1, Bool x2 -> Val (Bool (x1 > x2))
+    | LessThan, _, _ -> raise (EvalError "can't divide non-integers"))
+  | Unop (neg, exp1) -> 
+    (match neg, get_exp (eval_e exp1 env) with 
+    | Negate, Num x1 -> Val (Num (~-(x1)))
+    | Negate, _ -> raise (EvalError "can't negate non-integers"))
+  | Conditional (exp1, exp2, exp3) -> 
+    (match get_exp (eval_e exp1 env) with 
+    | Bool b -> 
+      if b then eval_e exp2 env else eval_e exp3 env
+    | _ -> raise (EvalError "conditional can only evaluate bool"))
+  | App (f, a) -> 
+      (match eval_e f env with 
+      | Val (Fun (exp1, exp2)) -> 
+        eval_e exp2 (extend env exp1 (ref (eval_e a env)))
+      | _ -> raise (EvalError "failed App "))
+  | Let (x, def, body) | Letrec (x, def, body) -> 
+        eval_e body (extend env x (ref (eval_e def env)))
+  | Float _
+  | String _
+  | Unit _ -> Val exp
+;;
   
 (* Connecting the evaluators to the external world. The REPL in
    `miniml.ml` uses a call to the single function `evaluate` defined
@@ -247,4 +291,4 @@ let eval_e _ =
    above, not the `evaluate` function, so it doesn't matter how it's
    set when you submit your solution.) *)
    
-let evaluate = eval_d ;;
+let evaluate = eval_e ;;
