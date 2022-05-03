@@ -24,11 +24,14 @@
 %token <float> FLOAT
 %token <string> STRING 
 %token CONCAT
+%token F_PLUS
+%token F_MINUS
+%token F_TIMES
 
 %nonassoc IF
 %left LESSTHAN EQUALS
-%left PLUS MINUS
-%left TIMES
+%left PLUS MINUS F_MINUS F_PLUS
+%left TIMES F_TIMES
 %left CONCAT
 %nonassoc NEG
 
@@ -62,6 +65,9 @@ expnoapp: INT                   { Num $1 }
         | FLOAT                 { Float $1 }
         | STRING                { String $1 }
         | exp CONCAT exp        { Binop(Concat, $1, $3) }
+        | exp F_PLUS exp        { Binop(F_plus, $1, $3) }
+        | exp F_MINUS exp       { Binop(F_minus, $1, $3) }
+        | exp F_TIMES exp       { Binop(F_times, $1, $3) }
 ;
 
 %%

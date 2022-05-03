@@ -18,6 +18,9 @@ type binop =
   | Equals
   | LessThan
   | Concat
+  | F_plus
+  | F_minus
+  | F_times
 ;;
 
 type varid = string ;;
@@ -196,6 +199,9 @@ let rec exp_to_concrete_string (exp : expr) : string =
             | LessThan -> " < " 
             (* added concat *)
             | Concat -> " ^ "
+            | F_plus -> " +. "
+            | F_minus -> " -. "
+            | F_times -> " *. "
             in
           "(" ^ (exp_to_concrete_string exp1) ^ bin_str ^ 
           (exp_to_concrete_string exp2) ^ ")"
@@ -231,7 +237,7 @@ let rec exp_to_abstract_string (exp : expr) : string =
   | Var v -> "Var(" ^ v ^ ")"
   | Num n -> "Num(" ^ string_of_int n ^ ")"
   | Bool b -> "Bool(" ^ string_of_bool b ^ ")"
-  | Unop (neg, exp) -> "Unop(Negate, " ^ 
+  | Unop (_, exp) -> "Unop(Negate, " ^ 
                        (exp_to_abstract_string exp) ^ ")"
   | Binop (bin, exp1, exp2) -> 
           let bin_str : string = 
@@ -241,7 +247,10 @@ let rec exp_to_abstract_string (exp : expr) : string =
             | Times -> "Times"
             | Equals -> "Equals"
             | LessThan -> "LessThan" 
-            | Concat -> "Concat" in
+            | Concat -> "Concat" 
+            | F_plus -> "F_plus"
+            | F_minus -> "F_minus"
+            | F_times -> "F_times" in
           "Binop(" ^ bin_str ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
                                       exp_to_abstract_string exp2 ^ ")"
   | Conditional (exp1, exp2, exp3) -> 
@@ -264,6 +273,6 @@ let rec exp_to_abstract_string (exp : expr) : string =
                  exp_to_abstract_string exp2 ^ ")" 
   (* additional atomic types *)
   | Float f -> "Float(" ^ string_of_float f ^ ")"
-  | String s -> "String(\"" ^ s ^ "\")"
+  | String s -> "String(\"" ^ s ^ "\")"  
   | Unit _ -> "Unit"
   ;;

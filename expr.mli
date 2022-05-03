@@ -20,6 +20,9 @@ type binop =
   | Equals
   | LessThan
   | Concat
+  | F_plus
+  | F_minus
+  | F_times
 ;;
 
 (* Variable identifers *)

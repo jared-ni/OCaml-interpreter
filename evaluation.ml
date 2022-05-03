@@ -138,15 +138,19 @@ let eval_s (exp : expr) (_env : Env.env) : Env.value =
       let ex1 = eval_s_rec exp1 in 
       let ex2 = eval_s_rec exp2 in 
       (match bin, ex1, ex2 with 
-      (* extend binop to float *)
+      (* extend binop to float, string concat *)
+      | F_plus, Float x1, Float x2 -> Float (x1 +. x2)
+      | F_plus, _, _ -> raise (EvalError "can't f_plus non-floats")
+      | F_minus, Float x1, Float x2 -> Float (x1 -. x2)
+      | F_minus, _, _ -> raise (EvalError "can't f_minus non-floats")
+      | F_times, Float x1, Float x2 -> Float (x1 *. x2)
+      | F_times, _, _ -> raise (EvalError "can't f_plus non-floats")
+      
       | Plus, Num x1, Num x2 -> Num (x1 + x2)
-      | Plus, Float x1, Float x2 -> Float (x1 +. x2)
       | Plus, _, _ -> raise (EvalError "can't add non-integers")
       | Minus, Num x1, Num x2 -> Num (x1 - x2)
-      | Minus, Float x1, Float x2 -> Float (x1 -. x2)
       | Minus, _, _ -> raise (EvalError "can't subtract non-integers")
       | Times, Num x1, Num x2 -> Num (x1 * x2) 
-      | Times, Float x1, Float x2 -> Float (x1 *. x2)
       | Times, _, _ -> raise (EvalError "can't multiply non-integers")
       | Equals, Num x1, Num x2 -> Bool (x1 = x2)
       | Equals, Float x1, Float x2 -> Bool (x1 = x2)
@@ -311,4 +315,7 @@ let rec eval_e (exp : expr) (env : Env.env) : Env.value =
    above, not the `evaluate` function, so it doesn't matter how it's
    set when you submit your solution.) *)
    
-let evaluate = eval_e ;;
+let evaluate = eval_s 
+(* (e: expr) (en: Env.env) =  *)
+  (* let _ = Printf.printf "%s\n\n" (exp_to_abstract_string e) in  *)
+ ;;

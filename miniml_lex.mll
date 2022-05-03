@@ -41,16 +41,18 @@
                        ("*", TIMES);
                        ("(", OPEN);
                        (")", CLOSE);
-                       ("^", CONCAT)
+                       ("^", CONCAT);
+                       ("+.", F_PLUS);
+                       ("-.", F_MINUS);
+                       ("*.", F_TIMES)
                      ]
 }
 
 let digit = ['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
-let sym = ['(' ')'] | (['$' '&' '*' '+' '-' '/' '=' '<' '>' '^' '"' '^'
+let sym = ['(' ')'] | (['$' '&' '*' '+' '-' '/' '=' '<' '>' '^' '"'
                             '.' '~' ';' '!' '?' '%' ':' '#']+)
-let frac = '.' digit*
-let float = digit* frac?
+let float = digit* ['.'] digit*?
 let all_char = [^ '"' '\\' ]+
 let string = ['"'] all_char* ['"']
 
