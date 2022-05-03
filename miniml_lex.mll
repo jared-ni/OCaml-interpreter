@@ -41,7 +41,6 @@
                        ("*", TIMES);
                        ("(", OPEN);
                        (")", CLOSE);
-                       ("\"", PARAN);
                      ]
 }
 
@@ -49,11 +48,24 @@ let digit = ['0'-'9']
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
 let sym = ['(' ')'] | (['$' '&' '*' '+' '-' '/' '=' '<' '>' '^' '"'
                             '.' '~' ';' '!' '?' '%' ':' '#']+)
+let frac = '.' digit*
+let float = digit* frac?
+let all_char = [^ '"' ]*
+let string = '"' all_char* '"'
 
 rule token = parse
   | digit+ as inum
         { let num = int_of_string inum in
           INT num
+        }
+  | float as word 
+        {
+          let num = float_of_string word in 
+          FLOAT num
+        }
+  | string as word
+        {
+          STRING word
         }
   | id as word
         { try
