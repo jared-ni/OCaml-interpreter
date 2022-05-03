@@ -193,7 +193,10 @@ let rec exp_to_concrete_string (exp : expr) : string =
             | Minus -> " - "
             | Times -> " * "
             | Equals -> " = "
-            | LessThan -> " < " in
+            | LessThan -> " < " 
+            (* added concat *)
+            | Concat -> " ^ "
+            in
           "(" ^ (exp_to_concrete_string exp1) ^ bin_str ^ 
           (exp_to_concrete_string exp2) ^ ")"
   | Conditional (exp1, exp2, exp3) -> 
@@ -216,7 +219,7 @@ let rec exp_to_concrete_string (exp : expr) : string =
                         exp_to_concrete_string exp2
   (* additional atomic types *)
   | Float f -> string_of_float f
-  | String s -> s
+  | String s -> "\"" ^ s ^ "\""
   | Unit _ -> "()"
   ;;
      
@@ -237,7 +240,8 @@ let rec exp_to_abstract_string (exp : expr) : string =
             | Minus -> "Minus"
             | Times -> "Times"
             | Equals -> "Equals"
-            | LessThan -> "LessThan" in
+            | LessThan -> "LessThan" 
+            | Concat -> "Concat" in
           "Binop(" ^ bin_str ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
                                       exp_to_abstract_string exp2 ^ ")"
   | Conditional (exp1, exp2, exp3) -> 
@@ -260,6 +264,6 @@ let rec exp_to_abstract_string (exp : expr) : string =
                  exp_to_abstract_string exp2 ^ ")" 
   (* additional atomic types *)
   | Float f -> "Float(" ^ string_of_float f ^ ")"
-  | String s -> "String(" ^ s ^ ")"
+  | String s -> "String(\"" ^ s ^ "\")"
   | Unit _ -> "Unit"
   ;;

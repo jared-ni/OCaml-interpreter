@@ -217,7 +217,9 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
     | LessThan, Num x1, Num x2 -> Val (Bool (x1 < x2))
     | LessThan, Bool x1, Bool x2 -> Val (Bool (x1 > x2))
     | LessThan, _, _ -> raise (EvalError "can't divide non-integers")
-    | Concat, String x1, String x2 -> Val (String (x1 ^ x2))
+    | Concat, String x1, String x2 -> 
+      let char_list = String.split_on_char '"' (x1 ^ x2) in 
+      Val (String (List.fold_left (^) "" char_list))
     | Concat, _, _ -> raise (EvalError "can't concatenate non-strings"))
   | Unop (neg, exp1) -> 
     (match neg, get_exp (eval_d exp1 env) with 

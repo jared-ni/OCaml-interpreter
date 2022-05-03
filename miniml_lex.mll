@@ -51,8 +51,8 @@ let sym = ['(' ')'] | (['$' '&' '*' '+' '-' '/' '=' '<' '>' '^' '"' '^'
                             '.' '~' ';' '!' '?' '%' ':' '#']+)
 let frac = '.' digit*
 let float = digit* frac?
-let all_char = [^ '"' ]*
-let string = '"' all_char* '"'
+let all_char = [^ '"' '\\' ]+
+let string = ['"'] all_char* ['"']
 
 rule token = parse
   | digit+ as inum
@@ -66,7 +66,8 @@ rule token = parse
         }
   | string as word
         {
-          STRING word
+          let char_list = String.split_on_char '"' word in 
+          STRING (List.fold_left (fun acc x -> acc ^ x) "" char_list)
         }
   | id as word
         { try
