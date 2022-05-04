@@ -45,7 +45,7 @@
                        ("+.", FLOATPLUS);
                        ("-.", FLOATMINUS);
                        ("*.", FLOATTIMES);
-                       ("~-.", FLOATNEG)
+                       ("~-.", FLOATNEG);
                      ]
 }
 

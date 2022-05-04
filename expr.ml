@@ -34,6 +34,7 @@ type expr =
   | Binop of binop * expr * expr         (* binary operators *)
   | Conditional of expr * expr * expr    (* if then else *)
   | Fun of varid * expr                  (* function definitions *)
+  | FunUnit of unit * expr
   | Let of varid * expr * expr           (* local naming *)
   | Letrec of varid * expr * expr        (* recursive local naming *)
   | Raise                                (* exceptions *)
@@ -80,6 +81,7 @@ let rec free_vars (exp : expr) : varidset =
                 SS.union (free_vars exp1)
                (SS.union (free_vars exp2) (free_vars exp3))
   | Fun (v, exp1) -> SS.remove v (free_vars exp1)
+  | FunUnit (_, exp1) -> free_vars exp1
   | Let (v, exp1, exp2) -> 
         SS.union (SS.remove v (free_vars exp2)) (free_vars exp1)
   | Letrec (v, exp1, exp2) -> 
@@ -136,6 +138,7 @@ let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
                 Conditional (subst var_name repl exp1,
                              subst var_name repl exp2,
                              subst var_name repl exp3)
+  | FunUnit (u, exp1) -> FunUnit(u, subst var_name repl exp1)
   | Fun (v, exp1) ->
         if v = var_name then Fun (v, exp1)
         else if not (SS.mem v (free_vars repl)) 
@@ -209,6 +212,8 @@ let rec exp_to_concrete_string (exp : expr) : string =
                 " else " ^ (exp_to_concrete_string exp3)
   | Fun (v, exp) -> 
         "fun " ^ v ^ " -> " ^ exp_to_concrete_string exp
+  | FunUnit (_, exp) -> 
+        "fun () -> " ^ exp_to_concrete_string exp
   | Let (v, exp1, exp2) -> 
         "let " ^ v ^ " = " ^ 
         exp_to_concrete_string exp1 ^ " in " ^ 
@@ -261,6 +266,8 @@ let rec exp_to_abstract_string (exp : expr) : string =
                 exp_to_abstract_string exp3 ^ ")"
   | Fun (v, exp) -> 
         "Fun(" ^ v ^ ", " ^ exp_to_abstract_string exp ^ ")"
+  | FunUnit (_, exp) -> 
+        "FunUnit(unit, " ^ exp_to_abstract_string exp ^ ")"
   | Let (v, exp1, exp2) -> 
         "Let(" ^ v ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
                             exp_to_abstract_string exp2 ^ ")"

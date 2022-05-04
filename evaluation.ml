@@ -173,7 +173,7 @@ let get_exp (exp_val : Env.value) =
 let eval_s (exp : expr) (_env : Env.env) : Env.value =
   let rec eval_s_rec (exp : expr) : expr = 
     match exp with 
-    | Num _ | Bool _ | Float _ 
+    | Num _ | Bool _ | Float _ | FunUnit _
     | Fun _ | Unit   | String  _ -> exp
     | Var _ -> raise (EvalError "unbound variable")
     | Binop (bin, exp1, exp2) -> 
@@ -190,6 +190,10 @@ let eval_s (exp : expr) (_env : Env.env) : Env.value =
         (match eval_s_rec f with 
         | Fun (exp1, exp2) -> 
           eval_s_rec (subst exp1 (eval_s_rec a) exp2)
+        | FunUnit (_, exp1) -> 
+          (match a with 
+          | Unit -> eval_s_rec exp1
+          | _ -> raise (EvalError "unit function can only take unit as arg"))
         | _ -> raise (EvalError "failed App "))
     | Let (v, q, r) -> 
           eval_s_rec (subst v (eval_s_rec q) r)
@@ -204,7 +208,7 @@ let eval_s (exp : expr) (_env : Env.env) : Env.value =
 let rec eval_d (exp : expr) (env : Env.env) : Env.value =
   let open Env in 
   match exp with 
-  | Float _ | String _ | Unit
+  | Float _ | String _ | Unit | FunUnit _
   | Num _   | Bool _   | Fun _ -> Val exp
   | Var x -> lookup env x
   | Raise -> raise (EvalError "evaluation error")
@@ -223,6 +227,10 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
       (match eval_d f env with 
       | Val (Fun (exp1, exp2)) -> 
         eval_d exp2 (extend env exp1 (ref (eval_d a env)))
+      | Val (FunUnit (_, exp1)) -> 
+        (match a with 
+        | Unit -> eval_d exp1 env
+        | _ -> raise (EvalError "unit function can only take unit as arg"))
       | _ -> raise (EvalError "failed App "))
   | Let (x, def, body) | Letrec (x, def, body) -> 
         eval_d body (extend env x (ref (eval_d def env))) ;;
@@ -235,7 +243,7 @@ let rec eval_l (exp : expr) (env : Env.env) : Env.value =
   match exp with 
   | Float _ | String _ | Unit
   | Num _   | Bool _   -> Val exp
-  | Fun _ -> close exp env
+  | Fun _   | FunUnit _ -> close exp env
   | Var x -> lookup env x
   | Unassigned -> raise (EvalError "unassigned variable")
   | Raise -> raise (EvalError "evaluation error")
@@ -255,6 +263,10 @@ let rec eval_l (exp : expr) (env : Env.env) : Env.value =
         (match v with 
         | Fun (intp, outp) -> 
           eval_l outp (extend env_og intp (ref (eval_l exp_arg env)))
+        | FunUnit (_, exp1) -> 
+          (match exp_arg with 
+          | Unit -> eval_d exp1 env_og
+          | _ -> raise (EvalError "unit function can only take unit as arg"))
         | _ -> raise (EvalError "eval_l: no function application"))
       | _ -> raise (EvalError "eval_l: failed function application"))
   | Let (x, def, body) -> 

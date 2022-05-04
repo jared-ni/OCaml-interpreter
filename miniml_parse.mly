@@ -47,7 +47,8 @@ expnoapp: INT                   { Num $1 }
         | STRING                { String $1 }
         | TRUE                  { Bool true }
         | FALSE                 { Bool false }
-        | ID                    { Var $1 }
+        | ID                    { Var $1 }      
+        | UNIT                  { Unit }
         | exp PLUS exp          { Binop(Plus, $1, $3) }
         | exp MINUS exp         { Binop(Minus, $1, $3) }
         | exp TIMES exp         { Binop(Times, $1, $3) }
@@ -57,7 +58,8 @@ expnoapp: INT                   { Num $1 }
         | IF exp THEN exp ELSE exp      { Conditional($2, $4, $6) }
         | LET ID EQUALS exp IN exp      { Let($2, $4, $6) }
         | LET REC ID EQUALS exp IN exp  { Letrec($3, $5, $7) }
-        | FUNCTION ID DOT exp   { Fun($2, $4) } 
+        | FUNCTION ID DOT exp           { Fun($2, $4) } 
+        | FUNCTION OPEN CLOSE DOT exp     { FunUnit((), $5) }
         | RAISE                 { Raise }
         | OPEN exp CLOSE        { $2 }
         | OPEN CLOSE            { Unit }

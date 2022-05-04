@@ -38,6 +38,7 @@ type expr =
   | Binop of binop * expr * expr         (* binary operators *)
   | Conditional of expr * expr * expr    (* if then else *)
   | Fun of varid * expr                  (* function definitions *)
+  | FunUnit of unit * expr
   | Let of varid * expr * expr           (* local naming *)
   | Letrec of varid * expr * expr        (* recursive local naming *)
   | Raise                                (* exceptions *)
