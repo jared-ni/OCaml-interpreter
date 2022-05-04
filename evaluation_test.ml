@@ -9,11 +9,24 @@ let env_test () =
     let e1 = empty () in
     let e2 = extend e1 "z" (ref (Val (Num 42))) in 
     let e3 = extend e2 "z" (ref (Val (Num 69))) in
-    let e4 = 
+    let e4 = extend e3 "x" (ref (Val (Fun ("y", Float 10.)))) in 
+    let e5 = extend e1 "y" (ref (Closure (Fun ("n", Float 2.1), e2))) in 
     unit_test (close (Bool true) e1 
         = Closure(Bool true, e1))
         "env test 1" ;
-
+    unit_test (env_to_string e1 = "")
+        "env test 2" ;
+    unit_test (env_to_string e2 = "(z, 42);")
+        "env test 3" ;
+    unit_test (env_to_string e3 = "(z, 69);")
+        "env test 4" ;
+    (* Printf.printf "%s" (env_to_string e4); *)
+    unit_test (env_to_string e4 = "(z, 69);(x, fun y -> 10.);")
+        "env test 5" ;
+    unit_test (value_to_string (lookup e4 "z") = "69")
+        "env test 6" ;
+    unit_test (value_to_string (lookup e5 "y") = "(fun n -> 2.1), (z, 42);")
+        "env test 7" ;;
 
 let eval_s_test () = 
     let env = Env.empty () in 
@@ -65,8 +78,7 @@ let eval_s_test () =
         "eval_s float 14";
     unit_test (eval_s (Binop(Concat, String("what"), String("heck"))) env 
         = Val(String("whatheck")))
-        "eval_s string 15" ;
-;;
+        "eval_s string 15" ;;
 
 let eval_d_test () = 
     let env = Env.empty () in 
@@ -123,8 +135,7 @@ let eval_d_test () =
         "eval_d float 15";
     unit_test (eval_d (Binop(Concat, String("what"), String("heck"))) env 
         = Val(String("whatheck")))
-        "eval_d string 16" ;
-;;
+        "eval_d string 16" ;;
 
 let eval_l_test () = 
     let env = Env.empty () in 
@@ -176,13 +187,14 @@ let eval_l_test () =
         "eval_l float 14";
     unit_test (eval_l (Binop(Concat, String("what"), String("heck"))) env 
         = Val(String("whatheck")))
-        "eval_l string 15" ;
-;;
+        "eval_l string 15" ;;
 
 let test_all () = 
     eval_s_test () ;
     eval_d_test () ;
-    eval_l_test () ;;
+    eval_l_test () ;
+    env_test () 
+    ;;
 
 
 

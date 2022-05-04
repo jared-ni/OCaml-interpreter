@@ -82,7 +82,7 @@ module Env : ENV =
       | [] -> (varname, loc) :: env
       | (vid, valref) :: tl -> 
         if varname = vid then (vid, loc) :: tl 
-        else (vid, valref) :: (extend tl varname loc) ;;
+        else (vid, valref) :: (extend tl varname loc)
 
     let rec value_to_string ?(printenvp : bool = true) (v : value) : string =
       match v with 
@@ -90,14 +90,14 @@ module Env : ENV =
       | Closure (exp, env) -> 
         let exp_str = exp_to_concrete_string exp in 
         if printenvp then 
-          "(" ^ exp_str ^ ", " ^ env_to_string env ^ ")"
+          "(" ^ exp_str ^ "), " ^ env_to_string env
         else exp_str
 
     and env_to_string (env : env) : string =
       match env with 
       | [] -> ""
       | (vid, valref) :: tl -> 
-        "(" ^ vid ^ ", " ^ value_to_string !valref ^ "); " ^ env_to_string tl
+        "(" ^ vid ^ ", " ^ value_to_string !valref ^ ");" ^ env_to_string tl
   end
 ;;
 
