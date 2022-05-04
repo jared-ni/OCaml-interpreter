@@ -77,8 +77,12 @@ module Env : ENV =
         if vid = varname then !valref 
         else lookup tl varname
 
-    let extend (env : env) (varname : varid) (loc : value ref) : env =
-      (varname, loc) :: env
+    let rec extend (env : env) (varname : varid) (loc : value ref) : env =
+      match env with 
+      | [] -> (varname, loc) :: env
+      | (vid, valref) :: tl -> 
+        if varname = vid then (vid, loc) :: tl 
+        else (vid, valref) :: (extend tl varname loc) ;;
 
     let rec value_to_string ?(printenvp : bool = true) (v : value) : string =
       match v with 

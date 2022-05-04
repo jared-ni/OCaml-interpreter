@@ -5,6 +5,16 @@ open Evaluation.Env ;;
 open Absbook ;;
 
 
+let env_test () = 
+    let e1 = empty () in
+    let e2 = extend e1 "z" (ref (Val (Num 42))) in 
+    let e3 = extend e2 "z" (ref (Val (Num 69))) in
+    let e4 = 
+    unit_test (close (Bool true) e1 
+        = Closure(Bool true, e1))
+        "env test 1" ;
+
+
 let eval_s_test () = 
     let env = Env.empty () in 
     unit_test (eval_s (Num 1) env 
