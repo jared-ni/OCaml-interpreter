@@ -164,6 +164,7 @@ let binop_eval (bin : binop) (exp1 : expr) (exp2 : expr) =
   | Concat, String x1, String x2 -> String (x1 ^ x2)
   | Concat, _, _ -> raise (EvalError "can't concatenate non-strings") ;;
 
+(* gets expression from a Env.Val *)
 let get_exp (exp_val : Env.value) = 
     match exp_val with 
     | Env.Val v -> v

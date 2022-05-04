@@ -126,55 +126,45 @@ let gensym : string -> string =
    substituted for free occurrences of `var_name`, avoiding variable
    capture *)
 let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
+  let sub = subst var_name repl in
   match exp with 
   | Var v -> if v = var_name then repl else Var v
-  | Num v -> Num v
-  | Bool b -> Bool b
-  | Unop (neg, exp1) -> Unop (neg, subst var_name repl exp1)
+  (* additional atomic types *)
+  | Float _ | String _ | Unit | Num _ 
+  | Bool _  | Raise    | Unassigned -> exp
+  | Unop (neg, exp1) -> Unop (neg, sub exp1)
   | Binop (bin, exp1, exp2) -> 
-          Binop (bin, subst var_name repl exp1,
-                      subst var_name repl exp2)
+          Binop (bin, sub exp1, 
+                      sub exp2)
   | Conditional (exp1, exp2, exp3) -> 
-                Conditional (subst var_name repl exp1,
-                             subst var_name repl exp2,
-                             subst var_name repl exp3)
-  | FunUnit (u, exp1) -> FunUnit(u, subst var_name repl exp1)
+                Conditional (sub exp1, sub exp2, sub exp3)
+  | App (f, a) -> App (sub f, sub a)
+  | FunUnit (u, exp1) -> FunUnit(u, sub exp1)
   | Fun (v, exp1) ->
         if v = var_name then Fun (v, exp1)
         else if not (SS.mem v (free_vars repl)) 
-           then Fun (v, subst var_name repl exp1)
+           then Fun (v, sub exp1)
         else let new_var = new_varname () in 
-                Fun (new_var, subst var_name repl 
+                Fun (new_var, sub
                              (subst v (Var new_var) exp1))
   | Let (v, q, r) -> 
         if v = var_name then Let (v, subst v repl q, r)
         else if not (SS.mem v (free_vars repl))
-           then Let (v, subst var_name repl q, subst var_name repl r)
+           then Let (v, sub q, sub r)
         else let new_var = new_varname () in 
-                Let (new_var, subst var_name repl q, 
-                              subst var_name repl 
-                             (subst v (Var new_var) r))
+                Let (new_var, sub q, 
+                              sub (subst v (Var new_var) r))
   | Letrec (v, q, r) -> 
            (* do nothing, because x is not free variable *)
            if v = var_name then Letrec (v, q, r)
            else if not (SS.mem v (free_vars repl))
-            then Letrec (v, subst var_name repl q, subst var_name repl r)
+            then Letrec (v, sub q, sub r)
            (* sub for both Q and P *)
            else let new_var = new_varname () in 
                 let z = Var new_var in 
-                Letrec (new_var, subst var_name repl 
-                                (subst v z q),
-                                 subst var_name repl 
-                                (subst v z r))
-  | Raise -> Raise
-  | Unassigned -> Unassigned
-  | App (f, a) -> 
-        App (subst var_name repl f, subst var_name repl a)
-  (* additional atomic types *)
-  | Float f -> Float f
-  | String s -> String s
-  | Unit -> Unit
- ;;
+                Letrec (new_var, sub (subst v z q),
+                                 sub (subst v z r))
+;;
 
 
 (*......................................................................
