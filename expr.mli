@@ -10,6 +10,7 @@
 (* Unary operators *)
 type unop =
   | Negate
+  | FloatNegate
 ;;
 
 (* Binary operators *)
@@ -20,9 +21,9 @@ type binop =
   | Equals
   | LessThan
   | Concat
-  | F_plus
-  | F_minus
-  | F_times
+  | FloatPlus
+  | FloatMinus
+  | FloatTimes
 ;;
 
 (* Variable identifers *)
@@ -44,7 +45,7 @@ type expr =
   | App of expr * expr                   (* function applications *)
   | Float of float
   | String of string
-  | Unit of unit
+  | Unit
 ;;
     
 (*......................................................................

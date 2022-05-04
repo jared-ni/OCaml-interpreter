@@ -42,9 +42,10 @@
                        ("(", OPEN);
                        (")", CLOSE);
                        ("^", CONCAT);
-                       ("+.", F_PLUS);
-                       ("-.", F_MINUS);
-                       ("*.", F_TIMES)
+                       ("+.", FLOATPLUS);
+                       ("-.", FLOATMINUS);
+                       ("*.", FLOATTIMES);
+                       ("~-.", FLOATNEG)
                      ]
 }
 

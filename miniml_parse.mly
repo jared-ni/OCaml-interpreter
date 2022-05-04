@@ -10,9 +10,9 @@
 %token EOF
 %token OPEN CLOSE
 %token LET DOT IN REC
-%token NEG
-%token PLUS MINUS 
-%token TIMES
+%token NEG FLOATNEG
+%token PLUS MINUS FLOATPLUS FLOATMINUS
+%token TIMES FLOATTIMES
 %token LESSTHAN EQUALS
 %token IF THEN ELSE 
 %token FUNCTION
@@ -24,16 +24,13 @@
 %token <float> FLOAT
 %token <string> STRING 
 %token CONCAT
-%token F_PLUS
-%token F_MINUS
-%token F_TIMES
 
 %nonassoc IF
 %left LESSTHAN EQUALS
-%left PLUS MINUS F_MINUS F_PLUS
-%left TIMES F_TIMES
+%left PLUS MINUS FLOATMINUS FLOATPLUS
+%left TIMES FLOATTIMES
 %left CONCAT
-%nonassoc NEG
+%nonassoc NEG FLOATNEG
 
 %start input
 %type <Expr.expr> input
@@ -46,6 +43,8 @@ exp:    exp expnoapp            { App($1, $2) }
         | expnoapp              { $1 }
 
 expnoapp: INT                   { Num $1 }
+        | FLOAT                 { Float $1 }
+        | STRING                { String $1 }
         | TRUE                  { Bool true }
         | FALSE                 { Bool false }
         | ID                    { Var $1 }
@@ -61,13 +60,12 @@ expnoapp: INT                   { Num $1 }
         | FUNCTION ID DOT exp   { Fun($2, $4) } 
         | RAISE                 { Raise }
         | OPEN exp CLOSE        { $2 }
-        | OPEN CLOSE            { Unit() }
-        | FLOAT                 { Float $1 }
-        | STRING                { String $1 }
+        | OPEN CLOSE            { Unit }
         | exp CONCAT exp        { Binop(Concat, $1, $3) }
-        | exp F_PLUS exp        { Binop(F_plus, $1, $3) }
-        | exp F_MINUS exp       { Binop(F_minus, $1, $3) }
-        | exp F_TIMES exp       { Binop(F_times, $1, $3) }
+        | exp FLOATPLUS exp     { Binop(FloatPlus, $1, $3) }
+        | exp FLOATMINUS exp    { Binop(FloatMinus, $1, $3) }
+        | exp FLOATTIMES exp    { Binop(FloatTimes, $1, $3) }
+        | FLOATNEG exp          { Unop(FloatNegate, $2) }
 ;
 
 %%

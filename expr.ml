@@ -9,6 +9,7 @@
 
 type unop =
   | Negate
+  | FloatNegate
 ;;
     
 type binop =
@@ -18,9 +19,9 @@ type binop =
   | Equals
   | LessThan
   | Concat
-  | F_plus
-  | F_minus
-  | F_times
+  | FloatPlus
+  | FloatMinus
+  | FloatTimes
 ;;
 
 type varid = string ;;
@@ -41,7 +42,7 @@ type expr =
   (* additional atomic types *)
   | Float of float
   | String of string
-  | Unit of unit
+  | Unit
 ;;
   
 (*......................................................................
@@ -70,9 +71,9 @@ let vars_of_list : string list -> varidset =
    variables in `exp` *)
 let rec free_vars (exp : expr) : varidset =
   match exp with 
+    (* additional atomic types *)
+  | Float _ | String _ | Unit _ | Num _ | Bool _ -> SS.empty
   | Var v -> SS.singleton v
-  | Num _ -> SS.empty
-  | Bool _ -> SS.empty
   | Unop (_, exp1) -> free_vars exp1
   | Binop (_, exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
   | Conditional (exp1, exp2, exp3) -> 
@@ -87,10 +88,6 @@ let rec free_vars (exp : expr) : varidset =
   | Raise -> SS.empty
   | Unassigned -> SS.empty (* Should unassigned be added? *)
   | App (exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
-  (* additional atomic types *)
-  | Float _ -> SS.empty
-  | String _ -> SS.empty
-  | Unit _ -> SS.empty
 ;;
   
 (* new_varname () -- Returns a freshly minted `varid` constructed with
@@ -173,7 +170,7 @@ let rec subst (var_name : varid) (repl : expr) (exp : expr) : expr =
   (* additional atomic types *)
   | Float f -> Float f
   | String s -> String s
-  | Unit u -> Unit u
+  | Unit -> Unit
  ;;
 
 
@@ -199,9 +196,9 @@ let rec exp_to_concrete_string (exp : expr) : string =
             | LessThan -> " < " 
             (* added concat *)
             | Concat -> " ^ "
-            | F_plus -> " +. "
-            | F_minus -> " -. "
-            | F_times -> " *. "
+            | FloatPlus -> " +. "
+            | FloatMinus -> " -. "
+            | FloatTimes -> " *. "
             in
           "(" ^ (exp_to_concrete_string exp1) ^ bin_str ^ 
           (exp_to_concrete_string exp2) ^ ")"
@@ -226,7 +223,7 @@ let rec exp_to_concrete_string (exp : expr) : string =
   (* additional atomic types *)
   | Float f -> string_of_float f
   | String s -> "\"" ^ s ^ "\""
-  | Unit _ -> "()"
+  | Unit -> "()"
   ;;
      
 
@@ -248,9 +245,9 @@ let rec exp_to_abstract_string (exp : expr) : string =
             | Equals -> "Equals"
             | LessThan -> "LessThan" 
             | Concat -> "Concat" 
-            | F_plus -> "F_plus"
-            | F_minus -> "F_minus"
-            | F_times -> "F_times" in
+            | FloatPlus -> "Floatplus"
+            | FloatMinus -> "FloatMinus"
+            | FloatTimes -> "FloatTimes" in
           "Binop(" ^ bin_str ^ ", " ^ exp_to_abstract_string exp1 ^ ", " ^
                                       exp_to_abstract_string exp2 ^ ")"
   | Conditional (exp1, exp2, exp3) -> 
@@ -274,5 +271,5 @@ let rec exp_to_abstract_string (exp : expr) : string =
   (* additional atomic types *)
   | Float f -> "Float(" ^ string_of_float f ^ ")"
   | String s -> "String(\"" ^ s ^ "\")"  
-  | Unit _ -> "Unit"
+  | Unit -> "Unit"
   ;;

@@ -38,14 +38,18 @@ let repl () =
         
         (* EVALuate it *)
         let res = Ev.evaluate exp env in
+        let res_d = Ev.evaluate_d exp env in
+        let res_l = Ev.evaluate_l exp env in
          
         (* PRINT the result; in this initial version, the trivial
            evaluator just returns the expression unchanged as an
            element of the `Env.value` type (found in `expr.ml`), so we
            just extract the expression back out and print it *)
-        match res with
-        | Val resexp ->
-           printf "==> %s\n" (Ex.exp_to_abstract_string resexp)
+        match res, res_d, res_l with
+        | Val resexp, Val resexp_d, Val resexp_l ->
+           printf "eval_s ==> %s\n" (Ex.exp_to_abstract_string resexp);
+           printf "eval_d ==> %s\n" (Ex.exp_to_abstract_string resexp_d);
+           printf "eval_l ==> %s\n" (Ex.exp_to_abstract_string resexp_l)
         | _ -> failwith "not handling other cases yet"
       with
       | MP.Error -> printf "xx> parse error\n"
