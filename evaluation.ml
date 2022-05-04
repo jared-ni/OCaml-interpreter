@@ -209,7 +209,7 @@ let rec eval_d (exp : expr) (env : Env.env) : Env.value =
       let ex1 = get_exp (eval_d exp1 env) in 
       let ex2 = get_exp (eval_d exp2 env) in Val(binop_eval bin ex1 ex2)
   | Unop (uno, exp1) -> 
-      let ex1 = exp1 in Val(unop_eval uno ex1)
+      let ex1 = get_exp (eval_d exp1 env) in Val(unop_eval uno ex1)
   | Conditional (exp1, exp2, exp3) -> 
     (match get_exp (eval_d exp1 env) with 
     | Bool b -> 
@@ -230,16 +230,16 @@ let rec eval_l (exp : expr) (env : Env.env) : Env.value =
   let open Env in 
   match exp with 
   | Float _ | String _ | Unit
-  | Num _   | Bool _ -> Val exp
+  | Num _   | Bool _   -> Val exp
   | Fun _ -> close exp env
   | Var x -> lookup env x
-  | Raise -> raise (EvalError "evaluation error")
   | Unassigned -> raise (EvalError "unassigned variable")
+  | Raise -> raise (EvalError "evaluation error")
   | Binop (bin, exp1, exp2) -> 
       let ex1 = get_exp (eval_l exp1 env) in 
       let ex2 = get_exp (eval_l exp2 env) in Val(binop_eval bin ex1 ex2)
   | Unop (uno, exp1) -> 
-      let ex1 = exp1 in Val(unop_eval uno ex1)
+      let ex1 = get_exp (eval_d exp1 env) in Val(unop_eval uno ex1)
   | Conditional (exp1, exp2, exp3) -> 
     (match get_exp (eval_l exp1 env) with 
     | Bool b -> 
@@ -247,11 +247,19 @@ let rec eval_l (exp : expr) (env : Env.env) : Env.value =
     | _ -> raise (EvalError "conditional can only evaluate bool"))
   | App (exp_fun, exp_arg) -> 
       (match eval_l exp_fun env with 
-      | Closure (Fun (intp, outp), env_og) -> 
-        eval_l outp (extend env_og intp (ref (eval_l exp_arg env)))
+      | Closure (v, env_og) -> 
+        (match v with 
+        | Fun (intp, outp) -> 
+          eval_l outp (extend env_og intp (ref (eval_l exp_arg env)))
+        | _ -> raise (EvalError "eval_l: no function application"))
       | _ -> raise (EvalError "eval_l: failed function application"))
-  | Let (x, def, body) | Letrec (x, def, body) -> 
-        eval_l body (extend env x (ref (eval_l def env))) ;;
+  | Let (x, def, body) -> 
+        eval_l body (extend env x (ref (eval_l def env)))
+  | Letrec (x, def, body) -> 
+         let temp : value ref = ref (Val(Unassigned)) in 
+         let env_x = extend env x (temp) in 
+         let v_D = eval_l def env_x in 
+         temp := v_D; eval_l body env_x ;;
 
 (* The EXTENDED evaluator -- if you want, you can provide your
    extension as a separate evaluator, or if it is type- and
