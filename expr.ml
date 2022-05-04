@@ -72,7 +72,7 @@ let vars_of_list : string list -> varidset =
 let rec free_vars (exp : expr) : varidset =
   match exp with 
     (* additional atomic types *)
-  | Float _ | String _ | Unit _ | Num _ | Bool _ -> SS.empty
+  | Float _ | String _ | Unit | Num _ | Bool _ -> SS.empty
   | Var v -> SS.singleton v
   | Unop (_, exp1) -> free_vars exp1
   | Binop (_, exp1, exp2) -> SS.union (free_vars exp1) (free_vars exp2)
@@ -185,7 +185,8 @@ let rec exp_to_concrete_string (exp : expr) : string =
   | Var v -> v
   | Num n -> string_of_int n
   | Bool b -> string_of_bool b
-  | Unop (neg, exp) -> "~-(" ^ (exp_to_concrete_string exp) ^ ")"
+  | Unop (Negate, exp) -> "~-(" ^ exp_to_concrete_string exp ^ ")"
+  | Unop (FloatNegate, exp) -> "~-.(" ^ exp_to_concrete_string exp ^ ")"
   | Binop (bin, exp1, exp2) -> 
           let bin_str : string = 
             match bin with 
@@ -194,7 +195,7 @@ let rec exp_to_concrete_string (exp : expr) : string =
             | Times -> " * "
             | Equals -> " = "
             | LessThan -> " < " 
-            (* added concat *)
+            (* added float and string support *)
             | Concat -> " ^ "
             | FloatPlus -> " +. "
             | FloatMinus -> " -. "
@@ -217,7 +218,7 @@ let rec exp_to_concrete_string (exp : expr) : string =
         exp_to_concrete_string exp1 ^ " in " ^
         exp_to_concrete_string exp2
   | Raise -> "Exception "
-  | Unassigned -> "unassigned "
+  | Unassigned -> "Unassigned "
   | App (exp1, exp2) -> exp_to_concrete_string exp1 ^ " " ^
                         exp_to_concrete_string exp2
   (* additional atomic types *)
@@ -234,7 +235,10 @@ let rec exp_to_abstract_string (exp : expr) : string =
   | Var v -> "Var(" ^ v ^ ")"
   | Num n -> "Num(" ^ string_of_int n ^ ")"
   | Bool b -> "Bool(" ^ string_of_bool b ^ ")"
-  | Unop (_, exp) -> "Unop(Negate, " ^ 
+  | Unop (n, exp) -> 
+          (match n with 
+          | Negate -> "Unop(Negate, "
+          | FloatNegate -> "Unop(FloatNegate, ") ^ 
                        (exp_to_abstract_string exp) ^ ")"
   | Binop (bin, exp1, exp2) -> 
           let bin_str : string = 

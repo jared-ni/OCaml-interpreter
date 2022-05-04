@@ -7,7 +7,7 @@ module Ev = Evaluation ;;
 module MP = Miniml_parse ;;
 module ML = Miniml_lex ;;
 module Ex = Expr ;;
-
+module Env = Evaluation.Env ;;
 open Printf ;;
 
 (* str_to_exp str -- Returns the expression specified by `str` using
@@ -46,7 +46,7 @@ let repl () =
            element of the `Env.value` type (found in `expr.ml`), so we
            just extract the expression back out and print it *)
         match res, res_d, res_l with
-        | Val resexp, Val resexp_d, Val resexp_l ->
+        | Env.Val resexp, Env.Val resexp_d, Env.Val resexp_l ->
            printf "eval_s ==> %s\n" (Ex.exp_to_abstract_string resexp);
            printf "eval_d ==> %s\n" (Ex.exp_to_abstract_string resexp_d);
            printf "eval_l ==> %s\n" (Ex.exp_to_abstract_string resexp_l)

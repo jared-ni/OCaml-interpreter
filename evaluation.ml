@@ -166,7 +166,7 @@ let binop_eval (bin : binop) (exp1 : expr) (exp2 : expr) =
 
 let get_exp (exp_val : Env.value) = 
     match exp_val with 
-    | Val v -> v
+    | Env.Val v -> v
     | _ -> raise (EvalError "can't get expression from value") ;;
 
 (* The SUBSTITUTION MODEL evaluator -- to be completed *)
